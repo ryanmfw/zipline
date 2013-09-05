@@ -27,7 +27,9 @@ from zipline.errors import (
     UnsupportedSlippageModel,
     OverrideSlippagePostInit,
     UnsupportedCommissionModel,
-    OverrideCommissionPostInit
+    OverrideCommissionPostInit,
+    UnsupportedLeverageModel,
+    OverrideLeveragePostInit
 )
 from zipline.finance.performance import PerformanceTracker
 from zipline.sources import DataFrameSource, DataPanelSource
@@ -38,6 +40,13 @@ from zipline.finance.slippage import (
     SlippageModel,
     transact_partial
 )
+
+from zipline.finance.leverage import (
+    LeverageModel,
+    NullLeverage,
+    leverage_partial
+)
+
 from zipline.finance.commission import PerShare, PerTrade
 from zipline.finance.blotter import Blotter
 from zipline.finance.constants import ANNUALIZER
@@ -106,6 +115,8 @@ class TradingAlgorithm(object):
         # default components for transact
         self.slippage = VolumeShareSlippage()
         self.commission = PerShare()
+
+        self.leverage = NullLeverage()
 
         if 'data_frequency' in kwargs:
             self.set_data_frequency(kwargs.pop('data_frequency'))
@@ -218,6 +229,8 @@ class TradingAlgorithm(object):
 
         transact_method = transact_partial(self.slippage, self.commission)
         self.set_transact(transact_method)
+
+        self.blotter.leverage = leverage_partial(self.leverage, self.perf_tracker.get_portfolio())
 
         return self.trading_client.transform(self.data_gen)
 
@@ -423,6 +436,15 @@ class TradingAlgorithm(object):
         if self.initialized:
             raise OverrideCommissionPostInit()
         self.commission = commission
+
+    def set_leverage(self, leverage):
+        if not isinstance(leverage, LeverageModel):
+            raise UnsupportedLeverageModel()
+
+        if self.initialized:
+            raise OverrideLeveragePostInit()
+
+        self.leverage = leverage
 
     def set_sources(self, sources):
         assert isinstance(sources, list)

@@ -41,8 +41,8 @@ class WrongDataForTransform(ZiplineError):
 class UnsupportedSlippageModel(ZiplineError):
     """
     Raised if a user script calls the override_slippage magic
-    with a slipage object that isn't a VolumeShareSlippage or
-    FixedSlipapge
+    with a slippage object that isn't a VolumeShareSlippage or
+    FixedSlippage
     """
     msg = """
 You attempted to override slippage with an unsupported class. \
@@ -80,6 +80,26 @@ class OverrideCommissionPostInit(ZiplineError):
     msg = """
 You attempted to override commission after the simulation has \
 started. You may only call override_commission in your initialize \
+method.
+""".strip()
+
+class UnsupportedLeverageModel(ZiplineError):
+    """
+    Raised if a user script calls the override_leverage magic
+    with a slippage object that isn't a LeverageModel
+    """
+    msg = """
+You attempted to override leverage with an unsupported class. \
+Please use NullLeverage.
+""".strip()
+
+
+class OverrideLeveragePostInit(ZiplineError):
+    # Raised if a users script calls override_leverage magic
+    # after the initialize method has returned.
+    msg = """
+You attempted to override leverage after the simulation has \
+started. You may only call override_leverage in your initialize \
 method.
 """.strip()
 

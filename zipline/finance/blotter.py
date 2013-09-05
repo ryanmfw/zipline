@@ -28,6 +28,13 @@ from zipline.finance.slippage import (
     transact_partial,
     check_order_triggers
 )
+
+from zipline.finance.leverage import (
+    LeverageModel,
+    NullLeverage,
+    leverage_partial
+)
+
 from zipline.finance.commission import PerShare
 import zipline.utils.math_utils as zp_math
 
@@ -55,6 +62,8 @@ class Blotter(object):
         self.new_orders = []
         self.current_dt = None
         self.max_shares = int(1e+11)
+
+        self.leverage = leverage_partial(NullLeverage(), None)
 
     def __repr__(self):
         return """
@@ -119,6 +128,11 @@ class Blotter(object):
 
         # initialized filled field.
         order.filled = 0
+
+        # validate if order meets leverage requirements
+        if not self.leverage(order):
+            return None
+
         self.open_orders[order.sid].append(order)
         self.orders[order.id] = order
         self.new_orders.append(order)
